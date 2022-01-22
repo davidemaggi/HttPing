@@ -26,15 +26,32 @@ type logEntry struct {
 	isOk       bool
 }
 
+/*
+A simple cli util to test http connection
+*/
+
+const APP_NAME = "HttPing"
+const APP_VERSION = "1.0.0"
+const APP_AUTHOR = "Davide Maggi"
+const APP_URL = "https://github.com/davidemaggi/HttPing"
+
 func main() {
 
 	urlAddr := flag.String("u", "", "The url to ping, you can enter it without the flag")
 	continuos := flag.Bool("t", false, "Continuos Ping")
 	nPings := flag.Int64("n", 4, "Number of pings")
 	useGet := flag.Bool("g", false, "Use GET method instead of HEAD")
+	showVersion := flag.Bool("v", false, "Show Version details")
 
 	flag.Parse()
 
+	if *showVersion {
+		fmt.Printf("%s\n", APP_VERSION)
+		//fmt.Printf("%s @: %s", APP_AUTHOR, APP_URL)
+		os.Exit(0)
+	}
+
+	// If an url flag is not provided we'll check if it has been passed without flag
 	if *urlAddr == "" {
 		for i := range os.Args {
 			if strings.HasPrefix(os.Args[i], "http://") || strings.HasPrefix(os.Args[i], "https://") {
@@ -44,6 +61,8 @@ func main() {
 			}
 		}
 	}
+
+	//An Url is needed... Otherwise, we'll fail
 	if *urlAddr == "" {
 		fmt.Println("An Url must be provided")
 		flag.Usage()
@@ -51,27 +70,34 @@ func main() {
 
 	}
 
+	//Let's see if it's a valid Url
 	u, err := url.Parse(*urlAddr)
 	if err != nil {
 		fmt.Println("Provided Url is invalid")
 		flag.Usage()
 		os.Exit(1)
 	}
-
-	addr, err := net.LookupIP(u.Host)
 	ip := "0.0.0.0"
-	if err == nil {
-		ip = addr[0].String()
+	// Check if the user provided an url or an hostname
+	tmpAddr := net.ParseIP(u.Host)
+	if tmpAddr != nil {
+		ip = u.Host
 	} else {
-		fmt.Println("Provided Url cannot be resolved")
-		flag.Usage()
-		os.Exit(1)
+		//Let's check if we can resolve host
+		addr, err := net.LookupIP(u.Host)
+		if err == nil {
+			ip = addr[0].String()
+		} else {
+			fmt.Println("Provided Url cannot be resolved")
+			os.Exit(1)
+		}
 	}
 
 	n := int64(0)
 
 	req := request{url: *urlAddr, logs: []logEntry{}, ip: ip, host: u.Host}
 
+	//As default we'll just make an HEAD request
 	method := ""
 	if *useGet {
 		method = "GET"
@@ -93,21 +119,24 @@ func main() {
 			resp, err = http.Head(*urlAddr)
 		}
 
+		cLength := int64(0)
 		tmpLog.timeEnd = time.Now().UnixMilli()
 		if err != nil {
 			tmpLog.statusCode = 404
-			tmpLog.status = "404 Not Found"
+			tmpLog.status = err.Error()
+			cLength = -1
 
 		} else {
 			tmpLog.statusCode = resp.StatusCode
 			tmpLog.status = resp.Status
+			cLength = resp.ContentLength
 
 		}
 		tmpLog.isOk = tmpLog.statusCode >= 200 && tmpLog.statusCode < 300
 
 		req.logs = append(req.logs, tmpLog)
 
-		printLog(tmpLog, n, req.ip, resp.ContentLength)
+		printLog(tmpLog, n, req.ip, cLength)
 		n++
 		if n >= *nPings && !*continuos {
 			break
@@ -119,7 +148,7 @@ func main() {
 
 func printLog(l logEntry, seq int64, ip string, size int64) {
 
-	fmt.Printf("connected to %s (%d bytes), seq=%d time=%d ms ", ip, size, seq, l.timeEnd-l.timeStart)
+	fmt.Printf("connected to %s (%d bytes), seq=%d time=%d ms : ", ip, size, seq, l.timeEnd-l.timeStart)
 	fmt.Printf("%s \n", l.status)
 }
 
