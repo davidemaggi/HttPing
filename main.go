@@ -51,10 +51,10 @@ func main() {
 
 	}
 
-	fmt.Printf("%#v\n", os.Args)
+	//fmt.Printf("%#v\n", os.Args)
 
-	log.Println(*urlAddr)
-	log.Println(*continuos)
+	//log.Println(*urlAddr)
+	//log.Println(*continuos)
 
 	u, err := url.Parse(*urlAddr)
 	if err != nil {
@@ -120,7 +120,8 @@ func main() {
 
 func printLog(l logEntry, seq int64, ip string, size int64) {
 
-	fmt.Printf("connected to %s (%d bytes), seq=%d time=%d ms %s \n", ip, size, seq, l.timeEnd-l.timeStart, l.status)
+	fmt.Printf("connected to %s (%d bytes), seq=%d time=%d ms ", ip, size, seq, l.timeEnd-l.timeStart)
+	fmt.Printf("%s \n", l.status)
 }
 
 func printStats(r request) {
