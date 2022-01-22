@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -29,9 +28,9 @@ type logEntry struct {
 
 func main() {
 
-	urlAddr := flag.String("u", "", "Url to ping, you can enter it without the flag")
+	urlAddr := flag.String("u", "", "The url to ping, you can enter it without the flag")
 	continuos := flag.Bool("t", false, "Continuos Ping")
-	nPings := flag.Int64("n", 4, "Number Of Pings")
+	nPings := flag.Int64("n", 4, "Number of pings")
 	useGet := flag.Bool("g", false, "Use GET method instead of HEAD")
 
 	flag.Parse()
@@ -46,25 +45,27 @@ func main() {
 		}
 	}
 	if *urlAddr == "" {
+		fmt.Println("An Url must be provided")
 		flag.Usage()
-		log.Fatal("An Url must be provided")
+		os.Exit(1)
 
 	}
 
-	//fmt.Printf("%#v\n", os.Args)
-
-	//log.Println(*urlAddr)
-	//log.Println(*continuos)
-
 	u, err := url.Parse(*urlAddr)
 	if err != nil {
-		panic(err)
+		fmt.Println("Provided Url is invalid")
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	addr, err := net.LookupIP(u.Host)
 	ip := "0.0.0.0"
 	if err == nil {
 		ip = addr[0].String()
+	} else {
+		fmt.Println("Provided Url cannot be resolved")
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	n := int64(0)
@@ -104,7 +105,6 @@ func main() {
 		}
 		tmpLog.isOk = tmpLog.statusCode >= 200 && tmpLog.statusCode < 300
 
-		//fmt.Printf("%#v\n", tmpLog)
 		req.logs = append(req.logs, tmpLog)
 
 		printLog(tmpLog, n, req.ip, resp.ContentLength)
@@ -114,7 +114,6 @@ func main() {
 		}
 	}
 
-	//fmt.Printf("%#v\n", req)
 	printStats(req)
 }
 
@@ -152,7 +151,7 @@ func printStats(r request) {
 
 	perc := 100 * (nAll - nOk) / nAll
 
-	fmt.Printf("%d connects, %d ok, %.2f%% failed, time %dms\n", int64(nAll), int64(nOk), perc, sumTime)
+	fmt.Printf("%d connects, %d ok, %.2f%% failed, time %d ms\n", int64(nAll), int64(nOk), perc, sumTime)
 
 	avgTime := float64(sumTime) / nAll
 
