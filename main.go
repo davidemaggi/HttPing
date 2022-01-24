@@ -45,6 +45,8 @@ func main() {
 
 	flag.Parse()
 
+	//fmt.Printf("%#v\n", os.Args)
+
 	if *showVersion {
 		fmt.Printf("%s\n", APP_VERSION)
 		//fmt.Printf("%s @: %s", APP_AUTHOR, APP_URL)
@@ -53,13 +55,19 @@ func main() {
 
 	// If an url flag is not provided we'll check if it has been passed without flag
 	if *urlAddr == "" {
-		for i := range os.Args {
-			if strings.HasPrefix(os.Args[i], "http://") || strings.HasPrefix(os.Args[i], "https://") {
-				// Found!
-				*urlAddr = os.Args[i]
-				break
-			}
+
+		lastpar := os.Args[len(os.Args)-1]
+
+		if strings.HasPrefix(lastpar, "http://") || strings.HasPrefix(lastpar, "https://") {
+			// Found!
+			*urlAddr = lastpar
+
+		} else {
+
+			*urlAddr = fmt.Sprintf("https://%s", lastpar)
+
 		}
+
 	}
 
 	//An Url is needed... Otherwise, we'll fail
