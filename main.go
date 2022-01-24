@@ -31,7 +31,7 @@ A simple cli util to test http connection
 */
 
 const APP_NAME = "HttPing"
-const APP_VERSION = "1.0.0"
+const APP_VERSION = "1.0.1"
 const APP_AUTHOR = "Davide Maggi"
 const APP_URL = "https://github.com/davidemaggi/HttPing"
 
